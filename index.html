@@ -76,7 +76,14 @@
   .art{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 16px 12px;margin:10px 0;scroll-margin-top:calc(var(--headh,110px) + 8px)}
   .art.flash{box-shadow:0 0 0 3px var(--mark)}
   .art .no{display:flex;justify-content:space-between;align-items:center;font-weight:700;color:var(--accent)}
-  .art .txt{white-space:pre-wrap;margin-top:2px}
+  .art .txt{margin-top:2px}
+  .para{display:grid;grid-template-columns:1fr;column-gap:12px}
+  .multi .para{grid-template-columns:1.4em 1fr}
+  .pn{display:none}
+  .multi .pn{display:block;text-align:right;font-style:italic;color:var(--muted);border-right:2px solid var(--line);padding-right:8px}
+  .ln{white-space:pre-wrap}
+  .ln.k{padding-left:2em;text-indent:-2em}
+  .ln.m{padding-left:4.5em;text-indent:-2.5em}
   .art .copy{opacity:0;transition:.15s}
   .art:hover .copy{opacity:1}
   mark{background:var(--mark);padding:0 1px;border-radius:2px}
@@ -509,6 +516,20 @@ function tocHtml(L){
   if(!hs.length) return '<div class="hint">本法規沒有編章節。</div>';
   return hs.map(h => `<a href="#" class="l${h.rel}" data-target="${h.id}">${escHtml(h.title)}</a>`).join('');
 }
+// 把一條拆成「項」：沒有款目編號的行是新的一項；「一、」是款、「（一）」是目，歸在上一項
+const KUAN_RE = /^[一二三四五六七八九十百]+、/;
+const MU_RE = /^[（(][一二三四五六七八九十百]+[）)]/;
+function splitParagraphs(text){
+  const paras = [];
+  for(const raw of String(text).split('\n')){
+    const t = raw.replace(/^[\s　]+/, '');
+    if(!t) continue;
+    const kind = KUAN_RE.test(t) ? 'k' : MU_RE.test(t) ? 'm' : 'p';
+    if(kind === 'p' || !paras.length) paras.push([]);
+    paras[paras.length - 1].push({kind, text: t});
+  }
+  return paras.length ? paras : [[{kind:'p', text: String(text)}]];
+}
 function renderContent(q){
   const L = currentLaw, box = $('#content');
   const re = q ? new RegExp(escRe(escHtml(q)), 'g') : null;
@@ -520,7 +541,10 @@ function renderContent(q){
     }else{
       if(q && !it.text.includes(q) && !it.no.includes(q.replace(/\s+/g,''))) continue;
       hits++;
-      html += `<article class="art" id="${it.id}"><div class="no"><span>${hl(it.no)}</span><button class="btn small copy" data-copy="${it.id}">複製</button></div><div class="txt">${hl(it.text)}</div></article>`;
+      const paras = splitParagraphs(it.text);
+      const body = paras.map((p, i) => `<div class="para"><span class="pn">${i + 1}</span><div>` +
+        p.map(l => `<div class="ln ${l.kind}">${hl(l.text)}</div>`).join('') + '</div></div>').join('');
+      html += `<article class="art" id="${it.id}"><div class="no"><span>${hl(it.no)}</span><button class="btn small copy" data-copy="${it.id}">複製</button></div><div class="txt${paras.length > 1 ? ' multi' : ''}">${body}</div></article>`;
     }
   }
   box.innerHTML = html || `<div class="hint">沒有條文包含「${escHtml(q)}」。</div>`;
