@@ -68,6 +68,7 @@ function findBlock(rest, kind){
 function oldBodyFromBlock(block){
   const lines = block.split('\n');
   const body = lines.slice(4, -1);   // 0 標記、1 標題、2 導覽、3 空行、…、最後是結束標記
+  while(body.length && !body[body.length - 1].trim()) body.pop();
   return body.map(l => l.replace(/\s\^[\w-]+$/, '').replace(/\[\[[^\]|]*\|([^\]]*)\]\]/g, '$1').replace(/\[\[([^\]]*)\]\]/g, '$1'));
 }
 
