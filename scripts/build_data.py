@@ -31,9 +31,17 @@ MIN_LAWS = {"法律": 500, "命令": 1000}  # 筆數太少代表下載有問題�
 REQUEST_TIMEOUT = 300
 
 
+def force_ipv4():
+    """GitHub 的機器有時走 IPv6 連不到法務部（Network is unreachable），改成只用 IPv4。"""
+    import socket
+    import urllib3.util.connection as conn
+    conn.allowed_gai_family = lambda: socket.AF_INET
+
+
 def download(url):
     import requests
     import urllib3
+    force_ipv4()
     last_error = None
     for attempt in range(1, 4):
         try:
