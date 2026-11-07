@@ -21,4 +21,12 @@ assert.deepStrictEqual(refs('第五項第一款或第二款之行為'), ['第五
 assert.deepStrictEqual(refs('前項之規定'), []);
 const paras = C.splitParagraphs('甲。\n乙：\n十四、丙。\n（一）丁。\n戊。');
 assert.equal(paras.length, 3); assert.equal(paras[1][1].lab, 3); assert.equal(paras[1][2].kind, 'm');
+// 前條、次條、同條
+const ctx2 = {...ctx, no:'第321條', prev:'第320條', next:'第322條'};
+const refs2 = s => C.parseRefs(s, ctx2).filter(x => x.law).map(x => `${x.t}→${x.no}|${x.p}`);
+assert.deepStrictEqual(refs2('犯前條第一項、第二項之罪'), ['前條第一項→第320條|1', '第二項→第320條|2']);
+assert.deepStrictEqual(refs2('依次條第二項及同條第三項'), ['次條第二項→第322條|2', '同條第三項→第321條|3']);
+assert.deepStrictEqual(refs2('前二條第一項、第二項之罪及第五條'), ['第五條→第5條|null']);
+assert.deepStrictEqual(refs2('前條之規定，前項不適用'), []);
+assert.equal(C.parseRefs('犯前條第一項、第二項之罪', ctx2).map(s => s.t).join(''), '犯前條第一項、第二項之罪');
 console.log('ok');

@@ -218,7 +218,7 @@ function tocHtml(L){
 // 一行條文 → HTML：條文引用變連結、背誦模式遮數字、搜尋字醒目標示
 function lineHtml(text, no, re){
   const hl = s => re ? escHtml(s).replace(re, m => `<mark>${m}</mark>`) : escHtml(s);
-  return parseRefs(text, {law: currentLaw.name, no, resolve: resolveLawName}).map(seg => {
+  return parseRefs(text, {law: currentLaw.name, no, ...(neighborsOf(currentLaw).get(no) || {}), resolve: resolveLawName}).map(seg => {
     if(seg.law) return `<a class="ref" href="#" data-law="${escHtml(seg.law)}" data-no="${escHtml(seg.no)}"${seg.p ? ` data-p="${seg.p}"` : ''} title="${escHtml(seg.law === currentLaw.name ? seg.no : seg.law + seg.no)}${seg.p ? `第${seg.p}項` : ''}">${hl(seg.t)}</a>`;
     if(recite !== 'num') return hl(seg.t);
     return splitCloze(seg.t).map(c => c.cloze ? `<span class="cz">${hl(c.t)}</span>` : hl(c.t)).join('');
