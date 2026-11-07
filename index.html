@@ -636,6 +636,7 @@ function runXml(text, rpr){
   return `<w:r>${rpr ? `<w:rPr>${rpr}</w:rPr>` : ''}` +
     parts.map((p, i) => (i ? '<w:br/>' : '') + `<w:t xml:space="preserve">${escXml(p)}</w:t>`).join('') + '</w:r>';
 }
+const TEXT_W = 11906 - 1152 * 2, NUM_W = 420;  // A4 版心寬、項次欄寬（twips）
 function buildDocxParts(L){
   const body = [];
   const P = (inner, ppr) => `<w:p>${ppr ? `<w:pPr>${ppr}</w:pPr>` : ''}${inner}</w:p>`;
@@ -660,17 +661,32 @@ function buildDocxParts(L){
     }else{
       body.push(P(runXml(it.no, rFonts(FONT_HEAD) + '<w:b/>'), '<w:pStyle w:val="ArticleNo"/>'));
       const paras = splitParagraphs(it.text), multi = paras.length > 1;
-      const base = multi ? 400 : 0;  // 項次欄寬
-      paras.forEach((p, i) => p.forEach((l, j) => {
-        const last = i === paras.length - 1 && j === p.length - 1;
-        // 款「一、」懸掛 2 字；目「（一）」再縮 2 字、懸掛 3 字（12pt 一字 = 240）
-        const ind = l.kind === 'k' ? `<w:ind w:left="${base + 480}" w:hanging="480"/>`
-                  : l.kind === 'm' ? `<w:ind w:left="${base + 1200}" w:hanging="720"/>`
-                  : `<w:ind w:left="${base}" w:hanging="${base}"/>`;
-        const num = (multi && j === 0)
-          ? runXml(String(i + 1), '<w:i/><w:color w:val="808080"/>') + '<w:r><w:tab/></w:r>' : '';
-        body.push(P(num + runXml(l.text), `<w:pStyle w:val="${last ? 'ArticleLast' : 'ArticleLine'}"/>${ind}`));
-      }));
+      // 款「一、」懸掛 2 字；目「（一）」再縮 2 字、懸掛 3 字（12pt 一字 = 240）
+      const lineXml = (l, last) => {
+        const ind = l.kind === 'k' ? '<w:ind w:left="480" w:hanging="480"/>'
+                  : l.kind === 'm' ? '<w:ind w:left="1200" w:hanging="720"/>' : '';
+        return P(runXml(l.text), `<w:pStyle w:val="${last ? 'ArticleLast' : 'ArticleLine'}"/>${ind}`);
+      };
+      if(!multi){
+        paras[0].forEach((l, j) => body.push(lineXml(l, j === paras[0].length - 1)));
+      }else{
+        // 兩項以上：用無框線表格，左欄放項次、右欄放條文，避免 Word 擠壓定位點造成縮排錯位
+        const rows = paras.map((p, i) => {
+          const lastRow = i === paras.length - 1;
+          const numCell = `<w:tc><w:tcPr><w:tcW w:w="${NUM_W}" w:type="dxa"/></w:tcPr>` +
+            P(runXml(String(i + 1), '<w:i/><w:color w:val="808080"/>'),
+              `<w:pStyle w:val="${lastRow ? 'ArticleLast' : 'ArticleLine'}"/><w:jc w:val="right"/><w:ind w:right="120"/>`) + '</w:tc>';
+          const textCell = `<w:tc><w:tcPr><w:tcW w:w="${TEXT_W - NUM_W}" w:type="dxa"/>` +
+            '<w:tcBorders><w:left w:val="single" w:sz="8" w:space="0" w:color="D9D9D9"/></w:tcBorders>' +
+            '<w:tcMar><w:left w:w="140" w:type="dxa"/></w:tcMar></w:tcPr>' +
+            p.map((l, j) => lineXml(l, lastRow && j === p.length - 1)).join('') + '</w:tc>';
+          return `<w:tr><w:trPr><w:cantSplit/></w:trPr>${numCell}${textCell}</w:tr>`;
+        }).join('');
+        body.push('<w:tbl><w:tblPr>' + `<w:tblW w:w="${TEXT_W}" w:type="dxa"/><w:tblLayout w:type="fixed"/>` +
+          '<w:tblBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/></w:tblBorders>' +
+          '<w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="0" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar>' +
+          `<w:tblLook w:val="0000"/></w:tblPr><w:tblGrid><w:gridCol w:w="${NUM_W}"/><w:gridCol w:w="${TEXT_W - NUM_W}"/></w:tblGrid>${rows}</w:tbl>`);
+      }
     }
   }
   const sect = '<w:sectPr><w:footerReference w:type="default" r:id="rIdFooter"/>' +
