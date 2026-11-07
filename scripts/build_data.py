@@ -43,7 +43,7 @@ def download(url):
     import urllib3
     force_ipv4()
     last_error = None
-    for attempt in range(1, 4):
+    for attempt in range(1, 5):
         try:
             try:
                 res = requests.get(url, timeout=REQUEST_TIMEOUT)
@@ -52,11 +52,15 @@ def download(url):
                 urllib3.disable_warnings()
                 res = requests.get(url, timeout=REQUEST_TIMEOUT, verify=False)
             res.raise_for_status()
+            if not res.content.startswith(b"PK"):
+                # 法務部偶爾會回傳錯誤頁或不完整的檔案，當作失敗重試
+                raise RuntimeError(f"收到的不是 zip 檔（{len(res.content)} bytes，開頭 {res.content[:60]!r}）")
+            zipfile.ZipFile(io.BytesIO(res.content)).testzip()
             return res.content
         except Exception as e:  # noqa: BLE001
             last_error = e
             print(f"  第 {attempt} 次下載失敗：{e}")
-            time.sleep(10 * attempt)
+            time.sleep(20 * attempt)
     raise RuntimeError(f"下載失敗：{url}（{last_error}）")
 
 
