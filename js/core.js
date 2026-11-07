@@ -86,6 +86,12 @@ function buildLaw(raw){
   };
 }
 
+// 每條的上一條、下一條條號（解析「前條第一項」用）
+function neighborsOf(L){
+  if(!L.nb){ L.nb = new Map(); L.articles.forEach((a, i) => L.nb.set(a.no, {prev: L.articles[i-1] && L.articles[i-1].no, next: L.articles[i+1] && L.articles[i+1].no})); }
+  return L.nb;
+}
+
 // 把一條拆成「項」：沒有款目編號的行是新的一項；「一、」是款、「（一）」是目，歸在上一項
 var KUAN_RE = /^[一二三四五六七八九十百]+、/;
 var MU_RE = /^[（(][一二三四五六七八九十百]+[）)]/;
@@ -150,9 +156,9 @@ function refArticleNo(main, sub){ return `第${cnToInt(main)}${sub ? '-' + cnToI
 
 /**
  * 把一行條文切成文字與引用。
- * ctx = {law: 目前法規全名, no: 目前條號, resolve: name => 全名或 null（認得全名與簡稱）}
+ * ctx = {law: 目前法規全名, no: 目前條號, prev/next: 上一條與下一條的條號, resolve: name => 全名或 null（認得全名與簡稱）}
  * 回傳 [{t:'文字'}, {t:'刑法第四十七條第一項', law:'中華民國刑法', no:'第47條', p:1}, ...]
- * 「前項」「前條」這類相對說法不處理。
+ * 「前項」「前條」這類單獨的相對說法不處理；「前條第一項」「同條第二項」這類有項次的會連到正確的條。
  */
 function parseRefs(line, ctx){
   const out = []; let last = 0, prev = null;
@@ -174,13 +180,23 @@ function parseRefs(line, ctx){
         if(full){ found = {name: full, len: L}; break; }
       }
       if(found){ law = found.name; start -= found.len; }
-      else if(joined) law = prev.law;           // 「刑法第一條、第二條」：沿用前一個法規
+      else if(joined && !prev.skip) law = prev.law;   // 「刑法第一條、第二條」：沿用前一個法規
     }else{                                      // 只有項次
       p = cnToInt(m[4]);
-      if(joined){ law = prev.law; no = prev.no; }   // 「第四十七條第一項、第二項」
+      const before = line.slice(last, start);
+      const rel = before.match(/(前條|次條|同條|本條)$/);
+      if(/前[二三四五六七八九十各]+條$/.test(before) || (joined && prev.skip)){
+        prev = {skip: true, end: m.index + m[0].length};  // 「前二條第一項」指哪一條不確定，不做連結
+        continue;
+      }
+      if(rel){                                       // 「前條第一項」：上一條的第一項
+        no = {前條: ctx.prev, 次條: ctx.next, 同條: ctx.no, 本條: ctx.no}[rel[1]];
+        start -= rel[1].length;
+      }
+      else if(joined){ law = prev.law; no = prev.no; }   // 「第四十七條第一項、第二項」
       else no = ctx.no;                              // 「第五項第一款」：同一條
     }
-    if(!no || !law) continue;
+    if(!no || !law){ prev = {skip: true, end: m.index + m[0].length}; continue; }
     if(start > last) out.push({t: line.slice(last, start)});
     const ref = {t: line.slice(start, m.index + m[0].length), law, no, p, end: m.index + m[0].length};
     out.push(ref); prev = ref; last = ref.end;
@@ -209,5 +225,5 @@ function splitCloze(text){
 
 if(typeof module !== 'undefined') module.exports = {
   escHtml, escXml, fmtDate, isoDate, hashText, safeFileName, cnToInt, normalizeArticleNo, parseHeading,
-  buildLaw, splitParagraphs, parseHistories, BUILTIN_SHORT, parseShortText, parseRefs, refArticleNo, splitCloze
+  buildLaw, neighborsOf, splitParagraphs, parseHistories, BUILTIN_SHORT, parseShortText, parseRefs, refArticleNo, splitCloze
 };

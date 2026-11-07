@@ -11,8 +11,8 @@ function tagOf(law){ return '法規/' + String(law).replace(/[^\p{L}\p{N}_\-/]/g
 
 // 一行條文 → Markdown，條文引用變成 Obsidian 連結
 // mode 'file'：一條一檔（連到 [[法規第N條#^pX]]）；'single'：一部一檔（同法規連到本檔區塊）
-function mdLine(text, law, no, env, mode){
-  return parseRefs(text, {law, no, resolve: env.resolve}).map(seg => {
+function mdLine(text, law, no, env, mode, nb){
+  return parseRefs(text, {law, no, ...(nb || {}), resolve: env.resolve}).map(seg => {
     if(!seg.law) return seg.t;
     const label = seg.t.replace(/[|\]]/g, '');
     if(mode === 'single' && seg.law === law){
@@ -27,12 +27,12 @@ function mdLine(text, law, no, env, mode){
 function singleBlockId(no, p){ return 'a' + String(no).replace(/[第條]/g, '') + '-p' + p; }
 
 // 條文本體（項次用有序清單，每項結尾加區塊代碼，讓「第X條第Y項」能直接連到該項）
-function articleBodyLines(it, law, env, mode){
+function articleBodyLines(it, law, env, mode, nb){
   const paras = splitParagraphs(it.text), multi = paras.length > 1, out = [];
   paras.forEach((p, i) => {
     const id = mode === 'single' ? singleBlockId(it.no, i + 1) : blockId(i + 1);
     p.forEach((l, j) => {
-      const text = (l.kind === 'm' ? '　' : '') + mdLine(l.text, law, it.no, env, mode);
+      const text = (l.kind === 'm' ? '　' : '') + mdLine(l.text, law, it.no, env, mode, nb);
       let line = !multi ? text : j === 0 ? `${i + 1}. ${text}` : ' '.repeat(`${i + 1}. `.length) + text;
       if(j === p.length - 1) line += ` ^${id}`;
       out.push(line);
@@ -78,7 +78,7 @@ function genArticleFile(L, it, idx, env){
     `[[${safeFileName(L.name)}|${L.name}]]`,
     next ? `[[${articleFileName(L.name, next.no)}|${next.no} ›]]` : ''
   ].filter(Boolean).join('　｜　');
-  const body = articleBodyLines(it, L.name, env, 'file');
+  const body = articleBodyLines(it, L.name, env, 'file', neighborsOf(L).get(it.no));
   const hash = hashText(it.text);
   const block = [
     `%% 條文開始 ${MARK_VERSION} ${hash}：同步時只會更新到「條文結束」為止，筆記請寫在下面 %%`,
@@ -131,7 +131,7 @@ function buildSingleMarkdown(L, env){
   const depth = hs.length ? Math.max(...hs.map(h => h.rel)) : 0;
   for(const it of L.items){
     if(it.kind === 'h') out.push('', `${'#'.repeat(Math.min(it.rel + 1, 6))} ${it.title}`, '');
-    else out.push(`${'#'.repeat(Math.min(depth + 2, 6))} ${it.no}`, ...articleBodyLines(it, L.name, env, 'single'), '');
+    else out.push(`${'#'.repeat(Math.min(depth + 2, 6))} ${it.no}`, ...articleBodyLines(it, L.name, env, 'single', neighborsOf(L).get(it.no)), '');
   }
   if(L.histories.length){
     out.push('', '## 修正沿革', '');
