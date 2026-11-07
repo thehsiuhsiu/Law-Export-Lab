@@ -78,7 +78,8 @@ def parse_payload(name, raw):
         laws.append({
             "LawLevel": _text(law, "LawLevel"), "LawName": _text(law, "LawName"),
             "LawURL": _text(law, "LawURL"), "LawModifiedDate": _text(law, "LawModifiedDate"),
-            "LawAbandonNote": _text(law, "LawAbandonNote"), "LawArticles": articles,
+            "LawAbandonNote": _text(law, "LawAbandonNote"), "LawHistories": _text(law, "LawHistories"),
+            "LawArticles": articles,
         })
     return update, laws
 
@@ -94,7 +95,7 @@ def parse_zip(content):
     return update, laws
 
 
-KEEP = ("LawLevel", "LawName", "LawURL", "LawModifiedDate", "LawAbandonNote")
+KEEP = ("LawLevel", "LawName", "LawURL", "LawModifiedDate", "LawAbandonNote", "LawHistories")
 
 
 def slim(law):

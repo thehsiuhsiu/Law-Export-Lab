@@ -9,39 +9,49 @@
 <style>
   :root{
     --bg:#f6f5f0; --panel:#ffffff; --ink:#24252a; --muted:#6b6d74; --line:#e3e1d8;
-    --accent:#3d5a80; --accent-soft:#e7edf5; --mark:#ffe58a; --danger:#a33a3a;
+    --accent:#3d5a80; --accent-soft:#e7edf5; --mark:#ffe58a; --danger:#a33a3a; --fs:16px;
   }
   *{box-sizing:border-box}
   [hidden]{display:none!important}
   html,body{margin:0;height:100%}
   body{font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:15px;line-height:1.7}
-  button,input{font:inherit;color:inherit}
+  button,input,textarea{font:inherit;color:inherit}
   a{color:var(--accent)}
   .app{display:grid;grid-template-columns:300px 1fr;height:100vh}
+  .mobile-only{display:none!important}
+
   /* ---- 左側 ---- */
   .side{border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
-  .brand{padding:16px 18px 10px;border-bottom:1px solid var(--line)}
+  .brand{padding:16px 18px 10px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:8px}
   .brand h1{margin:0;font-size:18px;letter-spacing:.05em}
   .brand .sub{font-size:12px;color:var(--muted)}
+  .brand .x{margin-left:auto}
   .search{padding:12px 14px;border-bottom:1px solid var(--line)}
   .field{width:100%;padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:#fbfbf8;outline:none}
   .field:focus{border-color:var(--accent);background:#fff}
   .results{flex:1;overflow:auto;padding:6px 8px}
+  .sec{font-size:12px;font-weight:700;color:var(--muted);padding:10px 10px 4px;display:flex;align-items:center;gap:6px}
   .law-item{display:block;width:100%;text-align:left;border:0;background:none;padding:7px 10px;border-radius:7px;cursor:pointer;line-height:1.45}
   .law-item:hover{background:#f1f0ea}
   .law-item.active{background:var(--accent-soft);color:var(--accent);font-weight:500}
   .law-item .meta{display:block;font-size:11.5px;color:var(--muted);font-weight:400}
   .tag{display:inline-block;font-size:11px;padding:0 6px;border-radius:4px;background:#eee;color:#555;margin-left:4px;vertical-align:1px}
   .tag.gone{background:#f6e3e3;color:var(--danger)}
+  .tag.new{background:#fff1c2;color:#7a5b00}
   .hint{font-size:12.5px;color:var(--muted);padding:8px 10px}
+  .vault{margin:4px 6px 10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fbfaf6;font-size:12.5px}
+  .vault .row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
   .datainfo{border-top:1px solid var(--line);padding:10px 14px;font-size:12px;color:var(--muted)}
-  .datainfo button{margin-top:6px}
-  .btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;white-space:nowrap}
+  .datainfo .row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
   .btn:hover{border-color:var(--accent);color:var(--accent)}
   .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
   .btn.primary:hover{filter:brightness(1.08);color:#fff}
   .btn.small{padding:2px 9px;font-size:12px}
+  .btn.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
   .btn:disabled{opacity:.5;cursor:default}
+  .x{border:0;background:none;cursor:pointer;font-size:18px;line-height:1;color:var(--muted);padding:2px 6px}
+
   /* ---- 右側 ---- */
   .main{min-width:0;min-height:0;overflow:auto;position:relative}
   .empty{max-width:640px;margin:48px auto;padding:0 20px}
@@ -55,61 +65,122 @@
   .status{margin-top:12px;font-size:13.5px;color:var(--muted);min-height:1.5em}
   .status.err{color:var(--danger)}
   .lawhead{position:sticky;top:0;z-index:5;background:rgba(246,245,240,.96);backdrop-filter:blur(4px);border-bottom:1px solid var(--line);padding:12px 24px 10px}
-  .lawhead h2{margin:0;font-size:20px}
+  .titlerow{display:flex;align-items:center;gap:10px}
+  .lawhead h2{margin:0;font-size:20px;flex:1;min-width:0}
   .lawhead .meta{font-size:12.5px;color:var(--muted)}
+  .lawhead .meta a{cursor:pointer}
   .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
-  .toolbar .field{width:auto;flex:1 1 180px;max-width:280px;padding:6px 10px}
-  .toolbar .jump{flex:0 1 150px}
+  .toolbar .field{width:auto;flex:1 1 170px;max-width:260px;padding:6px 10px}
+  .toolbar .jump{flex:0 1 140px}
   .toolbar .spacer{flex:1}
   .count{font-size:12.5px;color:var(--muted)}
+  .dd{position:relative}
+  .menu{position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:6px;min-width:230px;z-index:30}
+  .menu button{display:block;width:100%;text-align:left;border:0;background:none;padding:8px 10px;border-radius:7px;cursor:pointer;line-height:1.4}
+  .menu button:hover{background:#f1f0ea}
+  .menu button small{display:block;color:var(--muted);font-size:11.5px}
+  .menu button.cur{color:var(--accent);font-weight:500}
+  .menu hr{border:0;border-top:1px solid var(--line);margin:4px 2px}
   .body{display:grid;grid-template-columns:230px 1fr;gap:0}
   .toc{position:sticky;top:var(--headh,110px);align-self:start;max-height:calc(100vh - var(--headh,110px));overflow:auto;padding:14px 8px 30px 18px;font-size:13px;border-right:1px solid var(--line)}
+  .toc .tochead{display:none}
   .toc a{display:block;text-decoration:none;color:var(--ink);padding:3px 6px;border-radius:5px;line-height:1.4}
   .toc a:hover{background:#ecebe4}
   .toc .l1{font-weight:700;margin-top:6px}
   .toc .l2{padding-left:16px}
   .toc .l3{padding-left:28px;color:#4a4b52}
   .toc .l4,.toc .l5{padding-left:40px;color:#5b5c63}
-  .content{padding:10px 32px 80px;max-width:900px}
+  .content{padding:10px 32px 80px;max-width:900px;font-size:var(--fs)}
   .h{text-align:center;margin:28px 0 10px;scroll-margin-top:calc(var(--headh,110px) + 8px)}
-  .h.l1{font-size:19px}.h.l2{font-size:17px}.h.l3,.h.l4,.h.l5{font-size:15.5px}
+  .h.l1{font-size:1.25em}.h.l2{font-size:1.12em}.h.l3,.h.l4,.h.l5{font-size:1.03em}
   .art{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 16px 12px;margin:10px 0;scroll-margin-top:calc(var(--headh,110px) + 8px)}
-  .art.flash{box-shadow:0 0 0 3px var(--mark)}
-  .art .no{display:flex;justify-content:space-between;align-items:center;font-weight:700;color:var(--accent)}
+  .art.flash,.para.flash{box-shadow:0 0 0 3px var(--mark);border-radius:6px}
+  .art .no{display:flex;justify-content:space-between;align-items:center;font-weight:700;color:var(--accent);gap:6px}
+  .art .acts{display:flex;gap:6px}
   .art .txt{margin-top:2px}
-  .para{display:grid;grid-template-columns:1fr;column-gap:12px}
+  .para{display:grid;grid-template-columns:1fr;column-gap:12px;scroll-margin-top:calc(var(--headh,110px) + 8px)}
   .multi .para{grid-template-columns:1.4em 1fr}
   .pn{display:none}
   .multi .pn{display:block;text-align:right;font-style:italic;color:var(--muted);border-right:2px solid var(--line);padding-right:8px}
   .ln{white-space:pre-wrap}
   .ln.m{margin-left:2em}
+  a.ref{color:var(--accent);text-decoration:none;border-bottom:1px dashed rgba(61,90,128,.5)}
+  a.ref:hover{background:var(--accent-soft)}
   .art .copy{opacity:0;transition:.15s}
   .art:hover .copy{opacity:1}
   mark{background:var(--mark);padding:0 1px;border-radius:2px}
+  /* 背誦模式 */
+  .veil .para:not(.open) .pb{background:repeating-linear-gradient(-45deg,#e9e7de 0 6px,#f1efe8 6px 12px);color:transparent;border-radius:6px;cursor:pointer;user-select:none}
+  .veil .para:not(.open) .pb *{color:transparent!important;border-color:transparent!important;background:none!important}
+  .cz{background:#e2e0d6;color:transparent;border-radius:4px;cursor:pointer;padding:0 2px;user-select:none}
+  .cz.open{background:#fff1c2;color:inherit}
+  .recite-tip{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+
   .foot{font-size:11.5px;color:var(--muted);padding:20px 32px 30px;border-top:1px solid var(--line)}
   .banner{position:sticky;top:0;z-index:20;display:flex;gap:10px;align-items:flex-start;background:#fff8dc;border-bottom:1px solid #eadfae;padding:9px 20px;font-size:13.5px}
   .banner.ok{background:#e9f4ea;border-color:#c5e0c8}
   .banner.warn{background:#fbecec;border-color:#ecc9c9}
-  .banner .x{margin-left:auto;border:0;background:none;cursor:pointer;font-size:16px;line-height:1;color:var(--muted)}
+  .banner .x{margin-left:auto;font-size:16px}
+  .banner .btn{margin-left:6px}
   .main.has-banner .lawhead{top:var(--bannerh,40px)}
-  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#2d2f36;color:#fff;padding:8px 16px;border-radius:8px;font-size:13.5px;opacity:0;pointer-events:none;transition:.2s;z-index:50}
+  .modal{position:fixed;inset:0;background:rgba(30,30,35,.35);display:flex;align-items:center;justify-content:center;z-index:60;padding:16px}
+  .modal-card{background:#fff;border-radius:14px;max-width:620px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+  .modal-head{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);font-size:16px}
+  .modal-head .x{margin-left:auto}
+  .modal-body{padding:14px 18px 18px;overflow:auto;font-size:14px}
+  .modal-body ol{padding-left:22px;margin:0}
+  .modal-body li{margin:6px 0;white-space:pre-wrap}
+  .modal-body textarea{width:100%;min-height:160px;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:13.5px}
+  .modal-body details{margin-top:10px;font-size:12.5px;color:var(--muted)}
+  .sum{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:8px 0}
+  .sum b{display:block}
+  .bar{height:6px;background:#eceae2;border-radius:3px;overflow:hidden;margin:8px 0}
+  .bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
+  .backdrop{display:none}
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#2d2f36;color:#fff;padding:8px 16px;border-radius:8px;font-size:13.5px;opacity:0;pointer-events:none;transition:.2s;z-index:70;max-width:90vw}
   .toast.show{opacity:1}
+
+  /* ---- 手機 ---- */
   @media (max-width:860px){
-    .app{grid-template-columns:1fr;height:auto}
-    .side{border-right:0;border-bottom:1px solid var(--line);max-height:45vh}
-    .main{overflow:visible}
+    .mobile-only{display:inline-flex!important}
+    .app{display:block;height:100dvh}
+    .main{height:100dvh;overflow:auto}
+    .side{position:fixed;left:0;top:0;bottom:0;width:min(86vw,340px);z-index:45;transform:translateX(-105%);transition:transform .2s;border-right:1px solid var(--line);box-shadow:4px 0 20px rgba(0,0,0,.08)}
+    body.side-open .side{transform:none}
+    .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:40}
+    body.side-open .backdrop, body.toc-open .backdrop{display:block}
+    .lawhead{padding:8px 12px 8px;backdrop-filter:none;background:var(--bg)}
+    .lawhead h2{font-size:17px}
+    .titlerow{gap:6px}
+    .toolbar{gap:6px}
+    .toolbar .field{flex:1 1 60%;max-width:none}
+    .toolbar .field.jump{flex:1 1 80px;min-width:0}
+    .toolbar .btn{padding:6px 9px}
+    .toolbar .spacer{display:none}
     .body{grid-template-columns:1fr}
-    .toc{display:none}
-    .content{padding:10px 14px 60px}
+    .toc{position:fixed;left:0;top:0;bottom:0;height:100dvh;align-self:stretch;width:min(82vw,320px);max-height:none;z-index:45;background:var(--panel);transform:translateX(-105%);transition:transform .2s;padding:0 8px 30px 12px}
+    body.toc-open .toc{transform:none}
+    .toc .tochead{display:flex;align-items:center;position:sticky;top:0;background:var(--panel);padding:12px 4px 8px;font-weight:700;font-size:15px}
+    .toc .tochead .x{margin-left:auto}
+    .content{padding:8px 10px 60px}
+    .art{padding:8px 12px 10px}
+    .art .copy{opacity:1}
+    .menu{position:fixed;left:10px;right:10px;top:auto;bottom:10px;min-width:0;padding:8px;box-shadow:0 -6px 30px rgba(0,0,0,.2)}
+    .menu button{padding:12px}
+    .banner{padding:8px 12px}
+    .foot{padding:16px 14px 24px}
   }
 </style>
 </head>
 <body>
 <div class="app">
-  <aside class="side">
+  <aside class="side" id="side">
     <div class="brand">
-      <h1>法規查閱與匯出</h1>
-      <div class="sub">網頁閱讀 · Word · Markdown</div>
+      <div>
+        <h1>法規查閱與匯出</h1>
+        <div class="sub">網頁閱讀 · Obsidian · Word</div>
+      </div>
+      <button class="x mobile-only" id="closeSide" title="關閉">×</button>
     </div>
     <div class="search">
       <input id="q" class="field" type="search" placeholder="搜尋法規名稱，例如：刑法" autocomplete="off" disabled>
@@ -117,636 +188,49 @@
     <div id="results" class="results"><div class="hint">尚未載入法規資料。</div></div>
     <div id="datainfo" class="datainfo" hidden></div>
   </aside>
+  <div class="backdrop" id="backdrop"></div>
 
   <main id="main" class="main">
     <div id="banner" class="banner" hidden><span id="bannerText"></span><button class="x" id="bannerX" title="關閉">×</button></div>
     <section id="empty" class="empty">
       <h2 id="emptyTitle">先載入法務部的法規資料</h2>
-      <div>資料只會存在這台電腦的瀏覽器裡，下次打開不用再載入。</div>
-      <div class="steps">
-        <ol>
-          <li>下載「法律」資料檔：<a href="https://law.moj.gov.tw/api/Ch/Law/json" target="_blank" rel="noopener">law.moj.gov.tw/api/Ch/Law/json</a>（刑法、刑事訴訟法等都在這份）</li>
-          <li>需要「命令」（施行細則、辦法、規則）的話，再下載：<a href="https://law.moj.gov.tw/api/Ch/Order/json" target="_blank" rel="noopener">law.moj.gov.tw/api/Ch/Order/json</a></li>
-          <li>把下載的 zip 檔拖到下面的框裡（可以一次放兩個）。</li>
-        </ol>
+      <div id="emptyLocal">
+        <div>資料只會存在這台電腦的瀏覽器裡，下次打開不用再載入。</div>
+        <div class="steps">
+          <ol>
+            <li>下載「法律」資料檔：<a href="https://law.moj.gov.tw/api/Ch/Law/json" target="_blank" rel="noopener">law.moj.gov.tw/api/Ch/Law/json</a>（刑法、刑事訴訟法等都在這份）</li>
+            <li>需要「命令」（施行細則、辦法、規則）的話，再下載：<a href="https://law.moj.gov.tw/api/Ch/Order/json" target="_blank" rel="noopener">law.moj.gov.tw/api/Ch/Order/json</a></li>
+            <li>把下載的 zip 檔拖到下面的框裡（可以一次放兩個）。</li>
+          </ol>
+        </div>
+        <label id="drop" class="drop">
+          <strong>把 zip 檔拖到這裡，或點一下選擇檔案</strong>
+          <span class="count">支援法務部的 .zip、.json、.xml 檔</span>
+          <input id="file" type="file" accept=".zip,.json,.xml" multiple hidden>
+        </label>
+        <div id="status" class="status"></div>
       </div>
-      <label id="drop" class="drop">
-        <strong>把 zip 檔拖到這裡，或點一下選擇檔案</strong>
-        <span class="count">支援法務部的 .zip、.json、.xml 檔</span>
-        <input id="file" type="file" accept=".zip,.json,.xml" multiple hidden>
-      </label>
-      <div id="status" class="status"></div>
+      <div id="emptyOnline" hidden>
+        <p>請從法規清單選一部法規。</p>
+        <button class="btn primary mobile-only" data-open-side>打開法規清單</button>
+      </div>
     </section>
     <section id="lawview" hidden></section>
   </main>
 </div>
+<div id="modal" class="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <div class="modal-head"><b id="modalTitle"></b><button class="x" id="modalX" title="關閉">×</button></div>
+    <div id="modalBody" class="modal-body"></div>
+  </div>
+</div>
 <div id="toast" class="toast"></div>
 
 <script src="vendor/jszip.min.js"></script>
-<script>
-"use strict";
-/* ============================== 基本工具 ============================== */
-const $ = s => document.querySelector(s);
-const escHtml = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const escXml = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
-                             .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
-const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-let toastTimer;
-function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2400); }
-function setStatus(msg, err){ const s=$('#status'); s.textContent=msg; s.classList.toggle('err', !!err); }
-function fmtDate(d){ d=String(d||'').trim().split(/\s+/)[0]; return /^\d{8}$/.test(d) ? `${d.slice(0,4)}/${d.slice(4,6)}/${d.slice(6)}` : d; }
-function banner(html, kind){
-  const b = $('#banner');
-  if(!html){ b.hidden = true; $('#main').classList.remove('has-banner'); return; }
-  $('#bannerText').innerHTML = html; b.className = 'banner' + (kind ? ' ' + kind : ''); b.hidden = false;
-  $('#main').classList.add('has-banner');
-  document.documentElement.style.setProperty('--bannerh', b.offsetHeight + 'px');
-}
-$('#bannerX').onclick = () => banner(null);
-
-/* ============================== 法條整理 ============================== */
-// 統一條號：「第 1 條」「1」→「第1條」
-function normalizeArticleNo(no){
-  const t = String(no||'').replace(/\s+/g,'');
-  if(!t) return '';
-  if(t.startsWith('第') && t.endsWith('條')) return t;
-  return t.endsWith('條') ? t : `第${t}條`;
-}
-const HEAD_RE = /^第\s*([一二三四五六七八九十百千零〇\d]+)\s*(編|章|節|款|目)\s*(.*)$/;
-const UNIT_LEVEL = {編:1, 章:2, 節:3, 款:4, 目:5};
-// 解析編章節標題，回傳 {level, title}
-function parseHeading(text){
-  const t = String(text||'').trim().replace(/\s+/g,' ');
-  const m = t.match(HEAD_RE);
-  if(m) return {level: UNIT_LEVEL[m[2]], title: (`第${m[1]}${m[2]} ` + m[3].trim()).trim()};
-  for(const u of ['編','章','節','款','目']) if(t.includes(u)) return {level: UNIT_LEVEL[u], title: t};
-  return {level: 2, title: t};
-}
-function cleanContent(c){
-  return String(c||'').replace(/\r\n?/g,'\n').replace(/\n{2,}/g,'\n').replace(/\s+$/,'');
-}
-// 原始資料 → {name, level, modified, abandon, url, items:[...]}
-function buildLaw(raw){
-  const items = [], heads = [];
-  let hi = 0, ai = 0;
-  for(const a of (raw.LawArticles || [])){
-    const type = (a.ArticleType||'').trim();
-    if(type === 'C'){
-      const h = parseHeading(a.ArticleContent);
-      if(!h.title) continue;
-      const it = {kind:'h', lv:h.level, title:h.title, id:'h'+(++hi)};
-      items.push(it); heads.push(it);
-    }else if(type === 'A' && (a.ArticleNo||'').trim()){
-      items.push({kind:'a', no: normalizeArticleNo(a.ArticleNo), text: cleanContent(a.ArticleContent) || '（無內容）', id:'a'+(++ai)});
-    }
-  }
-  // 沒有「編」的法規，讓「章」當第一層
-  const minLv = heads.length ? Math.min(...heads.map(h=>h.lv)) : 1;
-  for(const h of heads) h.rel = Math.min(h.lv - minLv + 1, 5);
-  return {
-    name: raw.LawName, level: raw.LawLevel || '', modified: raw.LawModifiedDate || '',
-    abandon: raw.LawAbandonNote || '', url: raw.LawURL || '', items, articleCount: ai
-  };
-}
-
-/* ============================== 資料狀態 ============================== */
-// mode：'online' = 讀 GitHub Pages 上的 data/；'local' = 使用者自己上傳 zip
-const S = { mode: null, meta: new Map(), raw: new Map(), names: [], sources: {}, version: '', generated: '' };
-function dataDateText(){
-  const parts = Object.entries(S.sources).filter(([,v]) => v).map(([k,v]) => (Object.keys(S.sources).length > 1 ? k + ' ' : '') + fmtDate(v));
-  return parts.join('、');
-}
-
-/* ---- IndexedDB：files（上傳的 zip）、kv（法規清單）、laws（看過的法規全文） ---- */
-const DB_NAME = 'law-export-lab';
-let dbPromise = null;
-function idb(){
-  if(!dbPromise) dbPromise = new Promise((res, rej) => {
-    try{
-      const r = indexedDB.open(DB_NAME, 2);
-      r.onupgradeneeded = () => {
-        const db = r.result;
-        if(!db.objectStoreNames.contains('files')) db.createObjectStore('files', {keyPath:'name'});
-        if(!db.objectStoreNames.contains('kv')) db.createObjectStore('kv');
-        if(!db.objectStoreNames.contains('laws')) db.createObjectStore('laws', {keyPath:'id'});
-      };
-      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
-    }catch(e){ rej(e); }
-  });
-  return dbPromise;
-}
-async function idbReq(storeName, mode, fn){
-  try{
-    const db = await idb();
-    return await new Promise((res, rej) => {
-      const tx = db.transaction(storeName, mode); const st = tx.objectStore(storeName);
-      const r = fn(st); let out;
-      if(r) r.onsuccess = () => { out = r.result; };
-      tx.oncomplete = () => res(out); tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error);
-    });
-  }catch(e){ return undefined; }
-}
-const kvGet = k => idbReq('kv', 'readonly', st => st.get(k));
-const kvPut = (k, v) => idbReq('kv', 'readwrite', st => st.put(v, k));
-const lawGet = id => idbReq('laws', 'readonly', st => st.get(id));
-const lawPut = rec => idbReq('laws', 'readwrite', st => st.put(rec));
-const lawDel = id => idbReq('laws', 'readwrite', st => st.delete(id));
-const lawKeys = () => idbReq('laws', 'readonly', st => st.getAllKeys());
-const filesAll = () => idbReq('files', 'readonly', st => st.getAll());
-const filesPut = rec => idbReq('files', 'readwrite', st => st.put(rec));
-async function clearAll(){ for(const s of ['files','kv','laws']) await idbReq(s, 'readwrite', st => st.clear()); }
-
-/* ============================== 線上模式（GitHub Pages） ============================== */
-async function fetchJson(url){
-  const r = await fetch(url, {cache: 'no-store'});
-  if(!r.ok) throw new Error(`${r.status} ${url}`);
-  return r.json();
-}
-function applyIndex(idx){
-  S.meta.clear();
-  for(const l of idx.laws) S.meta.set(l.n, {name:l.n, level:l.lv, modified:l.m, abandon:l.ab, id:l.id, h:l.h});
-  S.sources = idx.sources || {}; S.version = idx.version; S.generated = idx.generated || '';
-}
-// 打開網頁時：先讀很小的 version.json，版本不同才下載新清單，再只重抓「看過且有修正」的法規
-async function checkOnline(isManual){
-  let ver = null;
-  try{ ver = await fetchJson('data/version.json?t=' + Date.now()); }catch(e){}
-  const cached = await kvGet('index');
-  if(!ver && !cached) return false;          // 沒有線上資料，也沒有存過 → 改用上傳模式
-  S.mode = 'online';
-  if(cached && !S.meta.size) applyIndex(cached);
-  if(!ver){
-    banner(`目前連不上資料來源，先使用這台電腦上次保存的資料（資料日期 ${escHtml(dataDateText())}）。`, 'warn');
-    return true;
-  }
-  if(cached && cached.version === ver.version){
-    if(isManual) banner(`已經是最新資料（資料日期 ${escHtml(dataDateText())}）。`, 'ok');
-    return true;
-  }
-  if(cached) banner('發現新的法規資料，正在下載…');
-  const idx = await fetchJson('data/index.json?v=' + ver.version);
-  const oldMeta = cached ? new Map(cached.laws.map(l => [l.n, l])) : null;
-  await kvPut('index', idx);
-  applyIndex(idx);
-  // 重抓瀏覽器裡存過、但內容有變動的法規
-  const byId = new Map(idx.laws.map(l => [l.id, l]));
-  const updatedSeen = [];
-  for(const id of (await lawKeys()) || []){
-    const rec = await lawGet(id); const now = byId.get(id);
-    if(!now){ await lawDel(id); continue; }
-    if(rec && rec.h !== now.h){
-      try{ await downloadLaw(now.n); updatedSeen.push(now); }catch(e){}
-    }
-  }
-  if(oldMeta){
-    const changed = idx.laws.filter(l => { const o = oldMeta.get(l.n); return !o || o.h !== l.h; });
-    let msg = `法規資料已更新（資料日期 ${escHtml(dataDateText())}），共 ${changed.length} 部法規有變動。`;
-    if(updatedSeen.length){
-      msg += '<br>你看過的法規已更新：' + updatedSeen.slice(0, 8).map(l =>
-        `<b>${escHtml(l.n)}</b>${l.m ? `（修正日期 ${escHtml(fmtDate(l.m))}）` : ''}`).join('、') +
-        (updatedSeen.length > 8 ? ` 等 ${updatedSeen.length} 部` : '');
-    }
-    banner(msg, 'ok');
-    if(currentName && updatedSeen.some(l => l.n === currentName)) openLaw(currentName, true);
-  }
-  return true;
-}
-async function downloadLaw(name){
-  const m = S.meta.get(name);
-  const raw = await fetchJson(`data/laws/${m.id}.json?v=${m.h}`);
-  await lawPut({id: m.id, h: m.h, raw});
-  return raw;
-}
-// 取得法規全文：上傳模式直接用；線上模式先看快取，版本不同才下載
-async function getRaw(name){
-  if(S.raw.has(name)) return S.raw.get(name);
-  const m = S.meta.get(name); if(!m) return null;
-  const rec = await lawGet(m.id);
-  if(rec && rec.h === m.h) return rec.raw;
-  try{ return await downloadLaw(name); }
-  catch(e){ if(rec){ toast('連不上資料來源，顯示上次保存的版本'); return rec.raw; } throw e; }
-}
-
-/* ============================== 上傳模式（備用） ============================== */
-function registerRaw(law){
-  S.raw.set(law.LawName, law);
-  S.meta.set(law.LawName, {name: law.LawName, level: law.LawLevel || '', modified: law.LawModifiedDate || '', abandon: law.LawAbandonNote || ''});
-}
-function addLawsFromJson(text, kind){
-  const data = JSON.parse(text.replace(/^﻿/, ''));
-  if(data.UpdateDate) S.sources[kind] = data.UpdateDate;
-  let n = 0;
-  for(const law of (data.Laws || [])){ if(law && law.LawName){ registerRaw(law); n++; } }
-  return n;
-}
-function addLawsFromXml(text, kind){
-  const doc = new DOMParser().parseFromString(text.replace(/^﻿/, ''), 'application/xml');
-  if(doc.querySelector('parsererror')) throw new Error('XML 格式無法解析');
-  const get = (el, tag) => { const x = el.getElementsByTagName(tag)[0]; return x ? x.textContent : ''; };
-  const root = doc.documentElement;
-  const up = root.getAttribute('UpdateDate') || get(root, 'UpdateDate');
-  if(up) S.sources[kind] = up;
-  let n = 0;
-  for(const lawEl of doc.getElementsByTagName('Law')){
-    const name = get(lawEl, 'LawName'); if(!name) continue;
-    const articles = [];
-    for(const ar of lawEl.getElementsByTagName('Article')){
-      articles.push({ArticleType: get(ar,'ArticleType'), ArticleNo: get(ar,'ArticleNo'),
-        ArticleContent: get(ar,'ArticleContent') || get(ar,'ArticleConctent')}); // 法務部 XML 拼字為 ArticleConctent
-    }
-    registerRaw({LawName:name, LawLevel:get(lawEl,'LawLevel'), LawModifiedDate:get(lawEl,'LawModifiedDate'),
-      LawAbandonNote:get(lawEl,'LawAbandonNote'), LawURL:get(lawEl,'LawURL'), LawArticles:articles});
-    n++;
-  }
-  return n;
-}
-async function ingestBuffer(name, buf){
-  const kind = /order/i.test(name) ? '命令' : '法律';
-  const isZip = new Uint8Array(buf.slice(0,2)).join(',') === '80,75'; // "PK"
-  if(!isZip){
-    const text = new TextDecoder('utf-8').decode(buf);
-    return text.trimStart().replace(/^﻿/,'').startsWith('<') ? addLawsFromXml(text, kind) : addLawsFromJson(text, kind);
-  }
-  const zip = await JSZip.loadAsync(buf);
-  const entries = Object.values(zip.files).filter(f => !f.dir && /\.(json|xml)$/i.test(f.name));
-  if(!entries.length) throw new Error(`「${name}」裡面找不到 JSON 或 XML 檔`);
-  let n = 0;
-  for(const f of entries){
-    setStatus(`正在解析 ${f.name}…（檔案很大，請稍候）`);
-    await new Promise(r => setTimeout(r, 30));
-    const text = await f.async('string');
-    const k = /order/i.test(f.name) ? '命令' : kind;
-    n += /\.json$/i.test(f.name) ? addLawsFromJson(text, k) : addLawsFromXml(text, k);
-  }
-  return n;
-}
-async function handleFiles(fileList){
-  const files = [...fileList]; if(!files.length) return;
-  let total = 0, saved = true;
-  try{
-    if(S.mode === 'online'){ S.mode = 'local'; S.meta.clear(); S.raw.clear(); S.sources = {}; }
-    S.mode = 'local';
-    for(const f of files){
-      setStatus(`正在讀取 ${f.name}…`);
-      const buf = await f.arrayBuffer();
-      const n = await ingestBuffer(f.name, buf.slice(0));
-      if(!n) throw new Error(`「${f.name}」裡面沒有找到法規資料`);
-      total += n;
-      saved = (await filesPut({name: f.name, buf, saved: Date.now()})) !== undefined || saved;
-    }
-    setStatus(`載入完成，共 ${total} 部法規。`);
-    banner(null);
-    onDataReady();
-  }catch(e){ console.error(e); setStatus('載入失敗：' + (e.message || e), true); }
-}
-async function loadLocalCached(){
-  const rows = await filesAll();
-  if(!rows || !rows.length) return false;
-  setStatus('正在讀取上次保存的法規資料…');
-  try{
-    S.mode = 'local';
-    for(const r of rows) await ingestBuffer(r.name, r.buf);
-    return true;
-  }catch(e){ setStatus('上次保存的資料無法讀取，請重新載入。', true); await idbReq('files','readwrite',st=>st.clear()); return false; }
-}
-
-/* ============================== 法規清單 ============================== */
-function onDataReady(){
-  S.names = [...S.meta.keys()].sort((a,b)=>a.length-b.length || a.localeCompare(b,'zh-Hant'));
-  $('#q').disabled = false;
-  const info = $('#datainfo'); info.hidden = false;
-  const date = dataDateText();
-  if(S.mode === 'online'){
-    info.innerHTML = `共 ${S.meta.size} 部法規` + (date ? `<br>資料日期：${escHtml(date)}` : '') +
-      `<br>每天自動從法務部更新` +
-      `<br><button class="btn small" id="recheck">檢查更新</button> <button class="btn small" id="clear">清除快取</button>`;
-    $('#recheck').onclick = async e => { e.target.disabled = true; try{ await checkOnline(true); renderResults(); onDataReadyInfoOnly(); }finally{ e.target.disabled = false; } };
-  }else{
-    info.innerHTML = `已載入 ${S.meta.size} 部法規` + (date ? `<br>資料日期：${escHtml(date)}` : '') +
-      `<br><button class="btn small" id="reload">更新資料</button> <button class="btn small" id="clear">清除資料</button>`;
-    $('#reload').onclick = () => showEmpty();
-  }
-  $('#clear').onclick = async () => { await clearAll(); try{ localStorage.removeItem('law-export-lab:last'); }catch(e){} location.reload(); };
-  renderResults();
-  if(!currentName){
-    let last = null; try{ last = localStorage.getItem('law-export-lab:last'); }catch(e){}
-    const start = (last && S.meta.has(last)) ? last : (S.meta.has('中華民國刑法') ? '中華民國刑法' : null);
-    if(start) openLaw(start); else showEmpty();
-  }
-}
-function onDataReadyInfoOnly(){ const keep = currentName; onDataReady(); currentName = keep; }
-function renderResults(){
-  const q = $('#q').value.trim().replace(/\s+/g,'');
-  const box = $('#results');
-  let list = S.names;
-  if(q){
-    list = list.filter(n => n.includes(q));
-    list.sort((a,b)=> (b===q)-(a===q) || (b.startsWith(q))-(a.startsWith(q)) || a.length-b.length);
-  }
-  const shown = list.slice(0, 150);
-  if(!shown.length){ box.innerHTML = `<div class="hint">找不到「${escHtml(q)}」。</div>`; return; }
-  box.innerHTML = (q ? '' : `<div class="hint">輸入關鍵字縮小範圍（共 ${list.length} 部）</div>`) + shown.map(n => {
-    const m = S.meta.get(n);
-    const gone = m.abandon ? '<span class="tag gone">已廢止</span>' : '';
-    const lv = m.level ? `<span class="tag">${escHtml(m.level)}</span>` : '';
-    const label = q ? escHtml(n).replace(new RegExp(escRe(escHtml(q)),'g'), x=>`<mark>${x}</mark>`) : escHtml(n);
-    return `<button class="law-item${n===currentName?' active':''}" data-name="${escHtml(n)}">${label}${lv}${gone}` +
-      (m.modified ? `<span class="meta">修正日期 ${escHtml(fmtDate(m.modified))}</span>` : '') + `</button>`;
-  }).join('') + (list.length > shown.length ? `<div class="hint">還有 ${list.length - shown.length} 筆，請輸入更多字。</div>` : '');
-}
-
-/* ============================== 閱讀畫面 ============================== */
-let currentName = null, currentLaw = null, openSeq = 0;
-function showEmpty(){ $('#empty').hidden = false; $('#lawview').hidden = true; }
-async function openLaw(name, keepScroll){
-  if(!S.meta.has(name)) return;
-  const seq = ++openSeq;
-  currentName = name;
-  document.querySelectorAll('.law-item').forEach(b => b.classList.toggle('active', b.dataset.name === name));
-  const v = $('#lawview');
-  const scroll = $('#main').scrollTop;
-  if(!keepScroll){ $('#empty').hidden = true; v.hidden = false; v.innerHTML = `<div class="empty"><div class="hint">正在載入 ${escHtml(name)}…</div></div>`; }
-  let raw;
-  try{ raw = await getRaw(name); }
-  catch(e){ if(seq === openSeq) v.innerHTML = `<div class="empty"><div class="status err">無法載入「${escHtml(name)}」，請確認網路後再試一次。</div></div>`; return; }
-  if(seq !== openSeq) return;
-  currentLaw = buildLaw(raw);
-  try{ localStorage.setItem('law-export-lab:last', name); }catch(e){}
-  $('#empty').hidden = true; v.hidden = false;
-  const L = currentLaw;
-  const metaBits = [L.level, L.modified && ('修正日期 ' + fmtDate(L.modified)), `${L.articleCount} 條`].filter(Boolean);
-  const date = dataDateText();
-  v.innerHTML = `
-    <div class="lawhead" id="lawhead">
-      <h2>${escHtml(L.name)}${L.abandon ? ' <span class="tag gone">已廢止</span>' : ''}</h2>
-      <div class="meta">${escHtml(metaBits.join('　·　'))}</div>
-      <div class="toolbar">
-        <input id="find" class="field" type="search" placeholder="搜尋條文內容" autocomplete="off">
-        <input id="jump" class="field jump" type="text" placeholder="跳到第幾條，如 271" autocomplete="off" inputmode="numeric">
-        <span id="count" class="count"></span>
-        <span class="spacer"></span>
-        <button class="btn primary" id="dlWord">下載 Word</button>
-        <button class="btn" id="dlMd">下載 Markdown</button>
-      </div>
-    </div>
-    <div class="body">
-      <nav class="toc" id="toc">${tocHtml(L)}</nav>
-      <div class="content" id="content"></div>
-    </div>
-    <div class="foot">資料來源：法務部全國法規資料庫${date ? `（資料日期 ${escHtml(date)}）` : ''}，依政府資料開放授權條款第 1 版釋出。條文以全國法規資料庫公告為準。${L.url ? ` <a href="${escHtml(L.url)}" target="_blank" rel="noopener">在全國法規資料庫查看</a>` : ''}</div>`;
-  renderContent('');
-  const head = $('#lawhead');
-  const setH = () => document.documentElement.style.setProperty('--headh', (head.offsetHeight + ($('#banner').hidden ? 0 : $('#banner').offsetHeight)) + 'px');
-  setH(); new ResizeObserver(setH).observe(head); new ResizeObserver(setH).observe($('#banner'));
-  $('#main').scrollTop = keepScroll ? scroll : 0;
-  let t; $('#find').addEventListener('input', e => { clearTimeout(t); t = setTimeout(() => renderContent(e.target.value.trim()), 150); });
-  $('#jump').addEventListener('keydown', e => { if(e.key === 'Enter') jumpTo(e.target.value); });
-  $('#dlWord').onclick = () => exportWord();
-  $('#dlMd').onclick = () => exportMarkdown();
-  $('#toc').addEventListener('click', e => {
-    const a = e.target.closest('a[data-target]'); if(!a) return;
-    e.preventDefault();
-    if($('#find').value){ $('#find').value=''; renderContent(''); }
-    const el = document.getElementById(a.dataset.target); if(el) el.scrollIntoView({block:'start'});
-  });
-}
-function tocHtml(L){
-  const hs = L.items.filter(i => i.kind === 'h');
-  if(!hs.length) return '<div class="hint">本法規沒有編章節。</div>';
-  return hs.map(h => `<a href="#" class="l${h.rel}" data-target="${h.id}">${escHtml(h.title)}</a>`).join('');
-}
-// 把一條拆成「項」：沒有款目編號的行是新的一項；「一、」是款、「（一）」是目，歸在上一項
-const KUAN_RE = /^[一二三四五六七八九十百]+、/;
-const MU_RE = /^[（(][一二三四五六七八九十百]+[）)]/;
-function splitParagraphs(text){
-  const paras = [];
-  for(const raw of String(text).split('\n')){
-    const t = raw.replace(/^[\s　]+/, '');
-    if(!t) continue;
-    const mk = t.match(KUAN_RE), mm = mk ? null : t.match(MU_RE);
-    const kind = mk ? 'k' : mm ? 'm' : 'p';
-    const lab = (mk || mm || [''])[0].length;  // 「十四、」=3 字，懸掛縮排依字數調整
-    if(kind === 'p' || !paras.length) paras.push([]);
-    paras[paras.length - 1].push({kind, text: t, lab});
-  }
-  return paras.length ? paras : [[{kind:'p', text: String(text)}]];
-}
-function renderContent(q){
-  const L = currentLaw, box = $('#content');
-  const re = q ? new RegExp(escRe(escHtml(q)), 'g') : null;
-  const hl = s => re ? escHtml(s).replace(re, m => `<mark>${m}</mark>`) : escHtml(s);
-  let html = '', hits = 0;
-  for(const it of L.items){
-    if(it.kind === 'h'){
-      if(!q) html += `<h3 class="h l${it.rel}" id="${it.id}">${escHtml(it.title)}</h3>`;
-    }else{
-      if(q && !it.text.includes(q) && !it.no.includes(q.replace(/\s+/g,''))) continue;
-      hits++;
-      const paras = splitParagraphs(it.text);
-      const body = paras.map((p, i) => `<div class="para"><span class="pn">${i + 1}</span><div>` +
-        p.map(l => `<div class="ln ${l.kind}"${l.lab ? ` style="padding-left:${l.lab}em;text-indent:-${l.lab}em"` : ''}>${hl(l.text)}</div>`).join('') + '</div></div>').join('');
-      html += `<article class="art" id="${it.id}"><div class="no"><span>${hl(it.no)}</span><button class="btn small copy" data-copy="${it.id}">複製</button></div><div class="txt${paras.length > 1 ? ' multi' : ''}">${body}</div></article>`;
-    }
-  }
-  box.innerHTML = html || `<div class="hint">沒有條文包含「${escHtml(q)}」。</div>`;
-  $('#count').textContent = q ? `找到 ${hits} 條` : '';
-}
-document.addEventListener('click', async e => {
-  const b = e.target.closest('[data-copy]'); if(!b || !currentLaw) return;
-  const it = currentLaw.items.find(i => i.id === b.dataset.copy); if(!it) return;
-  const text = `${currentLaw.name}${it.no}\n${it.text}`;
-  try{ await navigator.clipboard.writeText(text); toast('已複製 ' + it.no); }
-  catch(err){
-    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
-    let ok = false; try{ ok = document.execCommand('copy'); }catch(_){}
-    ta.remove(); toast(ok ? '已複製 ' + it.no : '這個環境不允許自動複製，請直接選取文字');
-  }
-});
-function jumpTo(v){
-  const s = String(v||'').replace(/\s+/g,'').replace(/之/g,'-').replace(/^第/,'').replace(/條$/,'');
-  if(!s) return;
-  const target = '第' + s + '條';
-  if($('#find').value){ $('#find').value=''; renderContent(''); }
-  const it = currentLaw.items.find(i => i.kind === 'a' && i.no === target);
-  if(!it){ toast(`找不到${target}`); return; }
-  const el = document.getElementById(it.id);
-  el.scrollIntoView({block:'start'});
-  el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600);
-}
-
-/* ============================== 下載 ============================== */
-const downloadsReady = (window.claude && typeof window.claude.use === 'function')
-  ? window.claude.use('downloads').catch(() => null) : Promise.resolve(null);
-function safeFileName(name){ return String(name).replace(/[\\/:*?"<>|]/g, '_'); }
-async function saveFile(filename, blob){
-  const dl = await downloadsReady;
-  if(dl){
-    try{ await dl.save({filename, data: blob}); toast('已下載 ' + filename); }
-    catch(e){ if(e && e.code !== 'declined') toast('無法下載：' + (e.message || e.code || e)); }
-    return;
-  }
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
-  toast('已下載 ' + filename);
-}
-function sourceLine(L){
-  const src = ['資料來源：法務部全國法規資料庫'];
-  if(L.modified) src.push('修正日期 ' + fmtDate(L.modified));
-  const d = dataDateText(); if(d) src.push('資料日期 ' + d);
-  return src;
-}
-
-/* ---- Markdown（給 Obsidian 用） ---- */
-function buildMarkdown(L){
-  const out = [`# ${L.name}`, '', '> ' + sourceLine(L).join('｜'), ''];
-  const hs = L.items.filter(i => i.kind === 'h');
-  if(hs.length){
-    out.push('## 目錄', '');
-    for(const h of hs) out.push(`${'  '.repeat(h.rel - 1)}- [[#${h.title}|${h.title}]]`);
-    out.push('');
-  }
-  for(const it of L.items){
-    if(it.kind === 'h'){
-      out.push('', `${'#'.repeat(Math.min(it.rel + 1, 6))} ${it.title}`, '');
-    }else{
-      out.push(`**${it.no}**`);
-      const paras = splitParagraphs(it.text), multi = paras.length > 1;
-      paras.forEach((p, i) => p.forEach((l, j) => {
-        const sub = l.kind === 'm' ? '　' : '';
-        if(!multi) out.push(sub + l.text);
-        else if(j === 0) out.push(`${i + 1}. ${l.text}`);              // 項：有序清單
-        else out.push(' '.repeat(`${i + 1}. `.length) + sub + l.text); // 款、目：放在該項底下
-      }));
-      out.push('');
-    }
-  }
-  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
-}
-function exportMarkdown(){
-  saveFile(safeFileName(currentLaw.name) + '.md', new Blob([buildMarkdown(currentLaw)], {type:'text/markdown;charset=utf-8'}));
-}
-
-/* ---- Word（自行組 OOXML，不需要外部套件） ---- */
-const FONT_BODY = 'JF OPEN 粉圓 2.1';
-const FONT_HEAD = 'LINE SEED TW_OTF Bold';
-function rFonts(f){ return `<w:rFonts w:ascii="${escXml(f)}" w:hAnsi="${escXml(f)}" w:eastAsia="${escXml(f)}" w:cs="${escXml(f)}"/>`; }
-function runXml(text, rpr){
-  const parts = String(text).split('\n');
-  return `<w:r>${rpr ? `<w:rPr>${rpr}</w:rPr>` : ''}` +
-    parts.map((p, i) => (i ? '<w:br/>' : '') + `<w:t xml:space="preserve">${escXml(p)}</w:t>`).join('') + '</w:r>';
-}
-const TEXT_W = 11906 - 1152 * 2, NUM_W = 420;  // A4 版心寬、項次欄寬（twips）
-function buildDocxParts(L){
-  const body = [];
-  const P = (inner, ppr) => `<w:p>${ppr ? `<w:pPr>${ppr}</w:pPr>` : ''}${inner}</w:p>`;
-  body.push(P(runXml(L.name), '<w:pStyle w:val="Title"/>'));
-  body.push(P(runXml(sourceLine(L).join('　'), '<w:color w:val="777777"/><w:sz w:val="18"/>'), '<w:jc w:val="center"/><w:spacing w:after="240"/>'));
-  const hs = L.items.filter(i => i.kind === 'h');
-  if(hs.length){
-    body.push(P(runXml('目錄'), '<w:pStyle w:val="TOCHeading"/>'));
-    hs.forEach((h, i) => {
-      const link = `<w:hyperlink w:anchor="law_h${i+1}" w:history="1">` +
-        runXml(h.title, '<w:color w:val="1F4E9A"/><w:u w:val="single"/>') + '</w:hyperlink>';
-      body.push(P(link, `<w:spacing w:after="40"/><w:ind w:left="${(h.rel - 1) * 480}"/>`));
-    });
-    body.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>');
-  }
-  let hIdx = 0;
-  for(const it of L.items){
-    if(it.kind === 'h'){
-      hIdx++;
-      body.push(`<w:p><w:pPr><w:pStyle w:val="Heading${Math.min(it.rel, 3)}"/></w:pPr>` +
-        `<w:bookmarkStart w:id="${hIdx}" w:name="law_h${hIdx}"/>${runXml(it.title)}<w:bookmarkEnd w:id="${hIdx}"/></w:p>`);
-    }else{
-      body.push(P(runXml(it.no, rFonts(FONT_HEAD) + '<w:b/>'), '<w:pStyle w:val="ArticleNo"/>'));
-      const paras = splitParagraphs(it.text), multi = paras.length > 1;
-      const lineXml = (l, last) => {
-        // 懸掛寬度 = 編號字數（「十四、」3 字、「（一）」3 字）；目再往內縮 2 字
-        const hang = (l.lab || 0) * 240;
-        const ind = l.kind === 'k' ? `<w:ind w:left="${hang}" w:hanging="${hang}"/>`
-                  : l.kind === 'm' ? `<w:ind w:left="${480 + hang}" w:hanging="${hang}"/>` : '';
-        return P(runXml(l.text), `<w:pStyle w:val="${last ? 'ArticleLast' : 'ArticleLine'}"/>${ind}`);
-      };
-      if(!multi){
-        paras[0].forEach((l, j) => body.push(lineXml(l, j === paras[0].length - 1)));
-      }else{
-        // 兩項以上：用無框線表格，左欄放項次、右欄放條文，避免 Word 擠壓定位點造成縮排錯位
-        const rows = paras.map((p, i) => {
-          const lastRow = i === paras.length - 1;
-          const numCell = `<w:tc><w:tcPr><w:tcW w:w="${NUM_W}" w:type="dxa"/></w:tcPr>` +
-            P(runXml(String(i + 1), '<w:i/><w:color w:val="808080"/>'),
-              `<w:pStyle w:val="${lastRow ? 'ArticleLast' : 'ArticleLine'}"/><w:jc w:val="right"/><w:ind w:right="120"/>`) + '</w:tc>';
-          const textCell = `<w:tc><w:tcPr><w:tcW w:w="${TEXT_W - NUM_W}" w:type="dxa"/>` +
-            '<w:tcBorders><w:left w:val="single" w:sz="8" w:space="0" w:color="D9D9D9"/></w:tcBorders>' +
-            '<w:tcMar><w:left w:w="140" w:type="dxa"/></w:tcMar></w:tcPr>' +
-            p.map((l, j) => lineXml(l, lastRow && j === p.length - 1)).join('') + '</w:tc>';
-          return `<w:tr><w:trPr><w:cantSplit/></w:trPr>${numCell}${textCell}</w:tr>`;
-        }).join('');
-        body.push('<w:tbl><w:tblPr>' + `<w:tblW w:w="${TEXT_W}" w:type="dxa"/><w:tblLayout w:type="fixed"/>` +
-          '<w:tblBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/></w:tblBorders>' +
-          '<w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="0" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar>' +
-          `<w:tblLook w:val="0000"/></w:tblPr><w:tblGrid><w:gridCol w:w="${NUM_W}"/><w:gridCol w:w="${TEXT_W - NUM_W}"/></w:tblGrid>${rows}</w:tbl>`);
-      }
-    }
-  }
-  const sect = '<w:sectPr><w:footerReference w:type="default" r:id="rIdFooter"/>' +
-    '<w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1152" w:right="1152" w:bottom="1152" w:left="1152" w:header="567" w:footer="567" w:gutter="0"/></w:sectPr>';
-  const NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
-  const hStyle = (id, name, lvl, sz) => `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="9"/><w:qFormat/>` +
-    `<w:pPr><w:keepNext/><w:keepLines/><w:spacing w:before="360" w:after="160"/><w:jc w:val="center"/><w:outlineLvl w:val="${lvl}"/></w:pPr>` +
-    `<w:rPr>${rFonts(FONT_HEAD)}<w:b/><w:bCs/><w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr></w:style>`;
-  const X = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
-  return {
-    '[Content_Types].xml': X + `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`,
-    '_rels/.rels': X + `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`,
-    'docProps/core.xml': X + `<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${escXml(L.name)}</dc:title><dc:creator>法規查閱與匯出</dc:creator></cp:coreProperties>`,
-    'word/_rels/document.xml.rels': X + `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rIdFooter" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/></Relationships>`,
-    'word/document.xml': X + `<w:document ${NS}><w:body>${body.join('')}${sect}</w:body></w:document>`,
-    'word/styles.xml': X + `<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-<w:docDefaults><w:rPrDefault><w:rPr>${rFonts(FONT_BODY)}<w:sz w:val="24"/><w:szCs w:val="24"/><w:lang w:val="en-US" w:eastAsia="zh-TW"/></w:rPr></w:rPrDefault>
-<w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
-<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>
-<w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:jc w:val="center"/><w:spacing w:after="120"/></w:pPr><w:rPr>${rFonts(FONT_HEAD)}<w:b/><w:sz w:val="44"/><w:szCs w:val="44"/></w:rPr></w:style>
-<w:style w:type="paragraph" w:styleId="TOCHeading"><w:name w:val="TOC Heading"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:before="240" w:after="160"/></w:pPr><w:rPr>${rFonts(FONT_HEAD)}<w:b/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:style>
-${hStyle('Heading1','heading 1',0,32)}
-${hStyle('Heading2','heading 2',1,28)}
-${hStyle('Heading3','heading 3',2,24)}
-<w:style w:type="paragraph" w:customStyle="1" w:styleId="ArticleNo"><w:name w:val="條號"/><w:basedOn w:val="Normal"/><w:next w:val="ArticleLine"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="0" w:after="40"/></w:pPr></w:style>
-<w:style w:type="paragraph" w:customStyle="1" w:styleId="ArticleLine"><w:name w:val="條文"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:before="0" w:after="40"/></w:pPr></w:style>
-<w:style w:type="paragraph" w:customStyle="1" w:styleId="ArticleLast"><w:name w:val="條文（末行）"/><w:basedOn w:val="ArticleLine"/><w:qFormat/><w:pPr><w:spacing w:before="0" w:after="240"/></w:pPr></w:style>
-<w:style w:type="paragraph" w:styleId="Footer"><w:name w:val="footer"/><w:basedOn w:val="Normal"/><w:pPr><w:jc w:val="center"/><w:spacing w:after="0"/></w:pPr><w:rPr><w:sz w:val="18"/></w:rPr></w:style>
-</w:styles>`,
-    'word/footer1.xml': X + `<w:ftr ${NS}><w:p><w:pPr><w:pStyle w:val="Footer"/></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>1</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p></w:ftr>`
-  };
-}
-async function exportWord(){
-  const btn = $('#dlWord'); btn.disabled = true; btn.textContent = '產生中…';
-  try{
-    const zip = new JSZip();
-    for(const [path, xml] of Object.entries(buildDocxParts(currentLaw))) zip.file(path, xml);
-    const blob = await zip.generateAsync({type:'blob', compression:'DEFLATE',
-      mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
-    await saveFile(safeFileName(currentLaw.name) + '.docx', blob);
-  }catch(e){ console.error(e); toast('產生 Word 失敗：' + (e.message || e)); }
-  finally{ btn.disabled = false; btn.textContent = '下載 Word'; }
-}
-
-/* ============================== 啟動 ============================== */
-$('#q').addEventListener('input', renderResults);
-$('#results').addEventListener('click', e => { const b = e.target.closest('.law-item'); if(b) openLaw(b.dataset.name); });
-$('#file').addEventListener('change', e => { handleFiles(e.target.files); e.target.value = ''; });
-const drop = $('#drop');
-['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
-['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
-drop.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
-(async () => {
-  let ok = false;
-  try{ ok = await checkOnline(false); }catch(e){ console.error(e); ok = S.meta.size > 0; if(ok) banner('檢查更新時發生錯誤，先使用已保存的資料。', 'warn'); }
-  if(!ok) ok = await loadLocalCached();
-  if(ok) onDataReady(); else { $('#q').placeholder = '請先載入法規資料'; }
-})();
-</script>
+<script src="js/core.js"></script>
+<script src="js/export.js"></script>
+<script src="js/sync.js"></script>
+<script src="js/data.js"></script>
+<script src="js/ui.js"></script>
 </body>
 </html>
