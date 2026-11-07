@@ -611,7 +611,13 @@ function buildMarkdown(L){
       out.push('', `${'#'.repeat(Math.min(it.rel + 1, 6))} ${it.title}`, '');
     }else{
       out.push(`**${it.no}**`);
-      for(const line of it.text.split('\n')) if(line.trim()) out.push(line.replace(/\s+$/,''));
+      const paras = splitParagraphs(it.text), multi = paras.length > 1;
+      paras.forEach((p, i) => p.forEach((l, j) => {
+        const sub = l.kind === 'm' ? '　' : '';
+        if(!multi) out.push(sub + l.text);
+        else if(j === 0) out.push(`${i + 1}. ${l.text}`);              // 項：有序清單
+        else out.push(' '.repeat(`${i + 1}. `.length) + sub + l.text); // 款、目：放在該項底下
+      }));
       out.push('');
     }
   }
@@ -652,7 +658,19 @@ function buildDocxParts(L){
       body.push(`<w:p><w:pPr><w:pStyle w:val="Heading${Math.min(it.rel, 3)}"/></w:pPr>` +
         `<w:bookmarkStart w:id="${hIdx}" w:name="law_h${hIdx}"/>${runXml(it.title)}<w:bookmarkEnd w:id="${hIdx}"/></w:p>`);
     }else{
-      body.push(P(runXml(it.no, rFonts(FONT_HEAD) + '<w:b/>') + '<w:r><w:br/></w:r>' + runXml(it.text), '<w:pStyle w:val="Article"/>'));
+      body.push(P(runXml(it.no, rFonts(FONT_HEAD) + '<w:b/>'), '<w:pStyle w:val="ArticleNo"/>'));
+      const paras = splitParagraphs(it.text), multi = paras.length > 1;
+      const base = multi ? 400 : 0;  // 項次欄寬
+      paras.forEach((p, i) => p.forEach((l, j) => {
+        const last = i === paras.length - 1 && j === p.length - 1;
+        // 款「一、」懸掛 2 字；目「（一）」再縮 2 字、懸掛 3 字（12pt 一字 = 240）
+        const ind = l.kind === 'k' ? `<w:ind w:left="${base + 480}" w:hanging="480"/>`
+                  : l.kind === 'm' ? `<w:ind w:left="${base + 1200}" w:hanging="720"/>`
+                  : `<w:ind w:left="${base}" w:hanging="${base}"/>`;
+        const num = (multi && j === 0)
+          ? runXml(String(i + 1), '<w:i/><w:color w:val="808080"/>') + '<w:r><w:tab/></w:r>' : '';
+        body.push(P(num + runXml(l.text), `<w:pStyle w:val="${last ? 'ArticleLast' : 'ArticleLine'}"/>${ind}`));
+      }));
     }
   }
   const sect = '<w:sectPr><w:footerReference w:type="default" r:id="rIdFooter"/>' +
@@ -677,7 +695,9 @@ function buildDocxParts(L){
 ${hStyle('Heading1','heading 1',0,32)}
 ${hStyle('Heading2','heading 2',1,28)}
 ${hStyle('Heading3','heading 3',2,24)}
-<w:style w:type="paragraph" w:customStyle="1" w:styleId="Article"><w:name w:val="法條"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:before="0" w:after="240"/></w:pPr></w:style>
+<w:style w:type="paragraph" w:customStyle="1" w:styleId="ArticleNo"><w:name w:val="條號"/><w:basedOn w:val="Normal"/><w:next w:val="ArticleLine"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="0" w:after="40"/></w:pPr></w:style>
+<w:style w:type="paragraph" w:customStyle="1" w:styleId="ArticleLine"><w:name w:val="條文"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:before="0" w:after="40"/></w:pPr></w:style>
+<w:style w:type="paragraph" w:customStyle="1" w:styleId="ArticleLast"><w:name w:val="條文（末行）"/><w:basedOn w:val="ArticleLine"/><w:qFormat/><w:pPr><w:spacing w:before="0" w:after="240"/></w:pPr></w:style>
 <w:style w:type="paragraph" w:styleId="Footer"><w:name w:val="footer"/><w:basedOn w:val="Normal"/><w:pPr><w:jc w:val="center"/><w:spacing w:after="0"/></w:pPr><w:rPr><w:sz w:val="18"/></w:rPr></w:style>
 </w:styles>`,
     'word/footer1.xml': X + `<w:ftr ${NS}><w:p><w:pPr><w:pStyle w:val="Footer"/></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>1</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p></w:ftr>`
