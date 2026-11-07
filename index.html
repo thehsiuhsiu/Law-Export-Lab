@@ -155,7 +155,7 @@ const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 let toastTimer;
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2400); }
 function setStatus(msg, err){ const s=$('#status'); s.textContent=msg; s.classList.toggle('err', !!err); }
-function fmtDate(d){ d=String(d||''); return /^\d{8}$/.test(d) ? `${d.slice(0,4)}/${d.slice(4,6)}/${d.slice(6)}` : d; }
+function fmtDate(d){ d=String(d||'').trim().split(/\s+/)[0]; return /^\d{8}$/.test(d) ? `${d.slice(0,4)}/${d.slice(4,6)}/${d.slice(6)}` : d; }
 function banner(html, kind){
   const b = $('#banner');
   if(!html){ b.hidden = true; $('#main').classList.remove('has-banner'); return; }
