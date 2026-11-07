@@ -82,8 +82,7 @@
   .pn{display:none}
   .multi .pn{display:block;text-align:right;font-style:italic;color:var(--muted);border-right:2px solid var(--line);padding-right:8px}
   .ln{white-space:pre-wrap}
-  .ln.k{padding-left:2em;text-indent:-2em}
-  .ln.m{padding-left:4.5em;text-indent:-2.5em}
+  .ln.m{margin-left:2em}
   .art .copy{opacity:0;transition:.15s}
   .art:hover .copy{opacity:1}
   mark{background:var(--mark);padding:0 1px;border-radius:2px}
@@ -524,9 +523,11 @@ function splitParagraphs(text){
   for(const raw of String(text).split('\n')){
     const t = raw.replace(/^[\s　]+/, '');
     if(!t) continue;
-    const kind = KUAN_RE.test(t) ? 'k' : MU_RE.test(t) ? 'm' : 'p';
+    const mk = t.match(KUAN_RE), mm = mk ? null : t.match(MU_RE);
+    const kind = mk ? 'k' : mm ? 'm' : 'p';
+    const lab = (mk || mm || [''])[0].length;  // 「十四、」=3 字，懸掛縮排依字數調整
     if(kind === 'p' || !paras.length) paras.push([]);
-    paras[paras.length - 1].push({kind, text: t});
+    paras[paras.length - 1].push({kind, text: t, lab});
   }
   return paras.length ? paras : [[{kind:'p', text: String(text)}]];
 }
@@ -543,7 +544,7 @@ function renderContent(q){
       hits++;
       const paras = splitParagraphs(it.text);
       const body = paras.map((p, i) => `<div class="para"><span class="pn">${i + 1}</span><div>` +
-        p.map(l => `<div class="ln ${l.kind}">${hl(l.text)}</div>`).join('') + '</div></div>').join('');
+        p.map(l => `<div class="ln ${l.kind}"${l.lab ? ` style="padding-left:${l.lab}em;text-indent:-${l.lab}em"` : ''}>${hl(l.text)}</div>`).join('') + '</div></div>').join('');
       html += `<article class="art" id="${it.id}"><div class="no"><span>${hl(it.no)}</span><button class="btn small copy" data-copy="${it.id}">複製</button></div><div class="txt${paras.length > 1 ? ' multi' : ''}">${body}</div></article>`;
     }
   }
@@ -661,10 +662,11 @@ function buildDocxParts(L){
     }else{
       body.push(P(runXml(it.no, rFonts(FONT_HEAD) + '<w:b/>'), '<w:pStyle w:val="ArticleNo"/>'));
       const paras = splitParagraphs(it.text), multi = paras.length > 1;
-      // 款「一、」懸掛 2 字；目「（一）」再縮 2 字、懸掛 3 字（12pt 一字 = 240）
       const lineXml = (l, last) => {
-        const ind = l.kind === 'k' ? '<w:ind w:left="480" w:hanging="480"/>'
-                  : l.kind === 'm' ? '<w:ind w:left="1200" w:hanging="720"/>' : '';
+        // 懸掛寬度 = 編號字數（「十四、」3 字、「（一）」3 字）；目再往內縮 2 字
+        const hang = (l.lab || 0) * 240;
+        const ind = l.kind === 'k' ? `<w:ind w:left="${hang}" w:hanging="${hang}"/>`
+                  : l.kind === 'm' ? `<w:ind w:left="${480 + hang}" w:hanging="${hang}"/>` : '';
         return P(runXml(l.text), `<w:pStyle w:val="${last ? 'ArticleLast' : 'ArticleLine'}"/>${ind}`);
       };
       if(!multi){
