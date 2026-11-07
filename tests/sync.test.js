@@ -36,5 +36,8 @@ const env = {resolve: n => ({'中華民國刑法':'中華民國刑法','刑法':
   res = await run(raw('稱以上、以下者。\n稱公務員者，謂下列人員：\n一、甲。\n二、乙。', [{ArticleType:'A',ArticleNo:'第 10-1 條',ArticleContent:'新增條。'}], true), '2026/11/10');
   console.log('4 insert+drop', JSON.stringify(res));
   console.log('---- 總覽\n' + dir.files.get('中華民國刑法.md'));
+    // 結束標記前有空行，最後一個 ^p 才不會在閱讀模式露出；修正前條文不含空行
+  assert(/\^p2\n\n%% 條文結束 %%/.test(dir.files.get(f10)));
+  assert(!/> \n/.test(dir.files.get(f10).split('[!note]')[1].split('## 筆記')[0]));
   console.log('ok');
 })().catch(e => { console.error(e); process.exit(1); });

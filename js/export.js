@@ -82,7 +82,8 @@ function genArticleFile(L, it, idx, env){
   const hash = hashText(it.text);
   const block = [
     `%% 條文開始 ${MARK_VERSION} ${hash}：同步時只會更新到「條文結束」為止，筆記請寫在下面 %%`,
-    `# ${L.name}${it.no}`, nav, '', ...body, '%% 條文結束 %%'
+    // 結束標記前要空一行，否則 Obsidian 會把標記併進最後一段，最後一個區塊代碼（^pN）就會露出來
+    `# ${L.name}${it.no}`, nav, '', ...body, '', '%% 條文結束 %%'
   ].join('\n');
   return {name: articleFileName(L.name, it.no) + '.md', props: articleProps(L, it, env), block, hash, body};
 }
@@ -106,7 +107,7 @@ function genOverviewFile(L, env){
     lines.push('', '## 修正沿革', '');
     L.histories.forEach((h, i) => lines.push(`${i + 1}. ` + h.split('\n').join('\n   ')));
   }
-  lines.push('%% 總覽結束 %%');
+  lines.push('', '%% 總覽結束 %%');
   return {name: safeFileName(L.name) + '.md', props: overviewProps(L, env), block: lines.join('\n').replace(/\n{3,}/g, '\n\n')};
 }
 
